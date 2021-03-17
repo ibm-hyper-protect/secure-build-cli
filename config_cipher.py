@@ -118,15 +118,21 @@ class ConfigCipher:
         keyid_email = keyid
         if not re.match(r'<.+@.+>', keyid) and email:
             keyid_email = keyid + ' <' + email + '>'
+        found = 0
         for key in gpg.list_keys():
             if 'uids' in key and keyid_email in key['uids']:
                 logger.debug('vendor_key: found={}'.format(json.dumps(key, indent=4)))
-                return key['fingerprint']
-        logger.debug('vendor_key: generating a key keyid={}'.format(keyid))
-        input_data = gpg.gen_key_input(key_type='RSA', key_length=4096, subkey_type='RSA', subkey_length=4096, expire_date=0, name_real=keyid, name_email=email)
-        vendor_key = gpg.gen_key(input_data)
-        vendor_key_fingerprint = str(vendor_key)
-        logger.debug('vendor_key: generated key={}'.format(vendor_key_fingerprint))
+                vendor_key_fingerprint = key['fingerprint']
+                found = found + 1
+        if found > 1:
+            logger.warning('vendor_key: {} keys found, using {}'.format(found, vendor_key_fingerprint))
+        elif found == 0:
+            logger.debug('vendor_key: generating a key keyid={}'.format(keyid))
+            input_data = gpg.gen_key_input(key_type='RSA', key_length=4096, subkey_type='RSA', subkey_length=4096, expire_date=0, name_real=keyid, name_email=email)
+            vendor_key = gpg.gen_key(input_data)
+            vendor_key_fingerprint = str(vendor_key)
+            logger.debug('vendor_key: generated key={}'.format(vendor_key_fingerprint))
+
         return vendor_key_fingerprint
 
     def import_ha_public_key(self):
@@ -152,7 +158,7 @@ class ConfigCipher:
             logging.error('encrypt_config_json: failed obtaining a vendor key keyid={}'.format(keyid))
             return None
         logging.debug('encrypt_config_json: vendor_key_fingerprint={}'.format(vendor_key_fingerprint))
-        config_json['vendor_key'] = gpg.export_keys(keyid)
+        config_json['vendor_key'] = gpg.export_keys(vendor_key_fingerprint)
 
         logger.debug('encrypt_config_json: config_json={}'.format(json.dumps(config_json, indent=4)))
 
