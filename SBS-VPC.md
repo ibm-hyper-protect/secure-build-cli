@@ -53,7 +53,7 @@ Create the `sbs-config.json` file in any location that you choose on your local 
   "CONTAINER_NAME": "SBContainer",
   "GITHUB_KEY_FILE": "~/.ssh/id_rsa",
   "GITHUB_URL": "git@github.com:<git_user>/<git_repo>.git",
-  "GITHUB_BRANCH": "master",
+  "GITHUB_BRANCH": "main",
   "DOCKER_REPO": "<docker_namespace>/<docker_repository_name>",
   "DOCKER_USER": "<docker_user>",
   "DOCKER_PASSWORD": "<docker_password>",
@@ -78,7 +78,7 @@ Where
 ```
 HOSTNAME - Hostname of the SBS server which will be used while generating certificates and communicating with the secure build server.
 CICD_PORT - port on which a build service is running (default: 443).
-IMAGE_TAG - image tag of the container image to be deployed as SBS server. Use "1.3.0.9" unless otherwise noted.
+IMAGE_TAG - image tag of the container image to be deployed as SBS server. Use "1.3.0.10" unless otherwise noted.
 CONTAINER_NAME - Name of the IBM Cloud Hyper Protect Secure Build Server instance which you want to create on VPC. This name can be different from the name which you use on VPC. The name is used as a part of a certificate file name. You can choose any valid string as a file name.
 GITHUB_KEY_FILE - Private key path to access your GitHub repo.
 GITHUB_URL - GitHub URL.
@@ -209,7 +209,7 @@ env: |
       ingestionKey: **********************************
       port: 14XX
   volumes:
-    test:
+    hpsb:
       seed: "testing"
   env:
     CLIENT_CRT: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3RENDQXFpZ0F3SUJBZ0lFQmR6U1VEQU5CZ2txaGtpRzl3MEJBUXNGQURCbU1Rc3dDUVlEVlFRR0V3SlYKVXpFTE1Ba0dBMVVFQ0F3Q1Rsa3hEekFOQmdOVkJB.....................
@@ -220,9 +220,7 @@ env: |
 
 5. To prepare the env section of the contract, see [How to prepare the ENV section](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se#hpcr_contract_env).
 
-6. The `env` section of the contract must be encrypted. For more information, see [Encrypting the ENV Contents](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se#hpcr_contract_encrypt_env).
-
-**Note:** It is recommend that you encrypt the `env` section of the contract.
+6. It is recommend that you encrypt the `env` section of the contract. For more information, see [Encrypting the ENV Contents](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se#hpcr_contract_encrypt_env).
 
 7. You can get the encrypted workload section of the contract from [step 2](https://cloud.ibm.com/docs/vpc?topic=vpc-about-hpsb#hpvs_hpsb).
 
@@ -478,7 +476,7 @@ Use the `--state-image` option to specify the state image file you downloaded pr
 ## How to recover the state image from Cloud Object Storage
 Complete the following steps:
 
-1. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-HPVScloud.md#deploying-the-secure-build-server), and use the same secret that was used to get the state image, otherwise the post state image operation fails.
+1. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-VPC.md#deploying-the-secure-build-server), and use the same secret that was used to get the state image, otherwise the post state image operation fails.
 
 2. Make sure the floating IP of the container should be mapped with the hostname in `/etc/hosts` file given during the certificate creation.
 ```
@@ -559,3 +557,48 @@ Complete the following steps:
 `SECRET` will be updated with a randomly generated base64 value in the `sbs-config.json` file if the update operation is successful.
 
 Note: After the secret is updated, you cannot use a state image obtained using the previous one. Consider obtaining a state image again with the new secret.
+
+
+## How to update the Secure Build Server (SBS)
+
+Complete the following steps:
+
+1. Export the state image to the Cloud Object Storage (COS) by following the [instructions](SBS-VPC.md#how-to-get-the-state-image).
+
+2. Generate the new contract with both the `workload` and `env` sections. Use the `workload` section on [this page](https://cloud.ibm.com/docs/vpc?topic=vpc-about-hpsb#hpvs_hpsb), and in the `env` section, make sure that you change the volume name from `test` to `hpsb`. For more information about creating the contract, see [About the contract](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se).
+
+3. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-VPC.md#deploying-the-secure-build-server) by using the contract file.
+
+4. Initialize the configuration and then Import the state image from COS with same `sbs-config.json` in step 1.
+```
+./build.py init --env <path>/sbs-config.json
+```
+
+5. Post the state image.
+```
+./build.py post-state-image -env <path>/sbs-config.json --name docker.io.<user_name>.sbs22.s390x-v0.1-60fd72e.2020-10-21_07-20-08.516797 {-state-bucket-name <your_bucket_name>}
+```
+  - Use the `--state-bucket-name` option, if you want to override the parameter in `sbs-config.json` or you don't have one in the file. 
+  - Use the `--name` option to specifiy the name of the state image on COS, which is the same as the name of the meta data file you downloaded with the `get-state-image` command.
+
+5. Update the configuration.
+```
+./build.py update --env <path>/sbs-config.json
+```
+
+6. Verify the upgrade is completed.
+
+    1. You can build your image using build command. Eventually your Docker image will be pushed to same registry.
+    ```
+    ./build.py build --env <path>/sbs-config.json
+    ```
+
+     2. Check the build log and wait until the build operation is completed.
+     ```
+     ./build.py log --log build --env <path>/sbs-config.json
+     ```
+
+     3. Check the status of SBS.
+    ```
+    ./build.py status --env <path>/sbs-config.json
+    ```
