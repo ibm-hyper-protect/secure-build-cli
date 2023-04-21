@@ -209,7 +209,7 @@ env: |
       ingestionKey: **********************************
       port: 14XX
   volumes:
-    test:
+    hpsb:
       seed: "testing"
   env:
     CLIENT_CRT: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3RENDQXFpZ0F3SUJBZ0lFQmR6U1VEQU5CZ2txaGtpRzl3MEJBUXNGQURCbU1Rc3dDUVlEVlFRR0V3SlYKVXpFTE1Ba0dBMVVFQ0F3Q1Rsa3hEekFOQmdOVkJB.....................
@@ -586,7 +586,19 @@ Complete the following steps:
 ./build.py update --env <path>/sbs-config.json
 ```
 
-6. Check the status of SBS.
+6. Verify the upgrade is completed.
+
+    1. You can build your image using build command. Eventually your Docker image will be pushed to same registry.
+    ```
+    ./build.py build --env <path>/sbs-config.json
+    ```
+
+     2. Check the build log and wait until the build operation is completed.
+     ```
+     ./build.py log --log build --env <path>/sbs-config.json
+     ```
+
+7. Check the status of SBS.
 ```
 ./build.py status --env <path>/sbs-config.json
 ```
