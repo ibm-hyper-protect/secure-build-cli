@@ -648,8 +648,8 @@ Environment           CLIENT_CA=...
                       SERVER_CRT=...
                       SERVER_KEY=...
 Last operation        update succeeded
-Last image update     2021-12-06 05:13
-Created               2021-12-06
+Last image update     2023-04-21 05:13
+Created               2023-04-21
 ```
 
 8. Update the following parameters of the `sbs-config.json` configuration file:
