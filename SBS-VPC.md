@@ -598,7 +598,7 @@ Complete the following steps:
      ./build.py log --log build --env <path>/sbs-config.json
      ```
 
-7. Check the status of SBS.
-```
-./build.py status --env <path>/sbs-config.json
-```
+     3. Check the status of SBS.
+    ```
+    ./build.py status --env <path>/sbs-config.json
+    ```
