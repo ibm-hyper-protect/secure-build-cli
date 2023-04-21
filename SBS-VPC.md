@@ -563,7 +563,7 @@ Note: After the secret is updated, you cannot use a state image obtained using t
 
 Complete the following steps:
 
-1. Export the state image to the Cloud Object Storage (COS) by folloing the [instructions](SBS-VPC.md#how-to-get-the-state-image).
+1. Export the state image to the Cloud Object Storage (COS) by following the [instructions](SBS-VPC.md#how-to-get-the-state-image).
 
 2. Generate the new contract with both the `workload` and `env` sections. Use the `workload` section on [this page](https://cloud.ibm.com/docs/vpc?topic=vpc-about-hpsb#hpvs_hpsb), and in the `env` section, make sure that you change the volume name from `test` to `hpsb`. For more information about creating the contract, see [About the contract](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se).
 
@@ -586,17 +586,7 @@ Complete the following steps:
 ./build.py update --env <path>/sbs-config.json
 ```
 
-6. You can build your image using the `build` command. Eventually your Docker image will be pushed to the same registry.
-```
-./build.py build --env <path>/sbs-config.json
-```
-
-7. Check the build log and wait until the build operation is completed.
-```
-./build.py log --log build --env <path>/sbs-config.json
-```
-
-8. Check the status of SBS.
+6. Check the status of SBS.
 ```
 ./build.py status --env <path>/sbs-config.json
 ```
