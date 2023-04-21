@@ -567,7 +567,7 @@ Complete the following steps:
 
 2. Generate the new contract with both the `workload` and `env` sections. Use the `workload` section on [this page](https://cloud.ibm.com/docs/vpc?topic=vpc-about-hpsb#hpvs_hpsb), and in the `env` section, make sure that you change the volume name from `test` to `hpsb`. For more information about creating the contract, see [About the contract](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se).
 
-3. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-HPVScloud.md#deploying-the-secure-build-server) by using the contract file.
+3. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-VPC.md#deploying-the-secure-build-server) by using the contract file.
 
 4. Initialize the configuration and then Import the state image from COS with same `sbs-config.json` in step 1.
 ```
