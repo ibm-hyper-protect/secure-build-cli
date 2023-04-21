@@ -654,6 +654,7 @@ Created               2021-12-06
 
 8. Update the following parameters of the `sbs-config.json` configuration file:
    - "build_image_tag": "1.3.0.10"
+   - "RUNTIME_TYPE": "classic"
    - If the base image used in Docker file is Red Hat Simple Signed on IBM Cloud Container Registry, you must provide the 'ICR_BASE_REPO', and 'ICR_BASE_REPO_PUBLIC_KEY' parameters.
    - If the built image is pushed to IBM Cloud Container Registry, set "DOCKER_CONTENT_TRUST_PUSH_SERVER": "https://<domain_name>".
 

@@ -476,7 +476,7 @@ Use the `--state-image` option to specify the state image file you downloaded pr
 ## How to recover the state image from Cloud Object Storage
 Complete the following steps:
 
-1. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-HPVScloud.md#deploying-the-secure-build-server), and use the same secret that was used to get the state image, otherwise the post state image operation fails.
+1. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-VPC.md#deploying-the-secure-build-server), and use the same secret that was used to get the state image, otherwise the post state image operation fails.
 
 2. Make sure the floating IP of the container should be mapped with the hostname in `/etc/hosts` file given during the certificate creation.
 ```
