@@ -43,6 +43,7 @@ Create the `sbs-config.json` file in any location you choose on your local machi
 ```
 {
   "HOSTNAME": "sbs.example.com",
+  "RUNTIME_TYPE": "classic",
   "CICD_PORT": "443",
   "IMAGE_TAG": "",
   "GITHUB_KEY_FILE": "~/.ssh/id_rsa",
