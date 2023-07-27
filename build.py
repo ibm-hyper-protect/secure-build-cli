@@ -329,6 +329,9 @@ class Build:
                    if value == "vpc" and 'repo_id' in self.params:
                     logger.fatal("REPO_ID is not supported parameter in vpc")
                     sys.exit(-1)
+                   elif value =="on-prem" and 'repo_id' in self.params:
+                    logger.fatal("REPO_ID is not supported parameter in on-prem")
+                    sys.exit(-1)
                    elif value =="classic" and 'repo_id' not in self.params:
                     logger.fatal('undefined parameter REPO_ID')
                     sys.exit(-1)
@@ -473,7 +476,10 @@ class Build:
             logger.info('a python config file has been written to {}.'.format(
                 repo_regfile_name+'.py'))
         else:
-            logger.fatal("get-config-python is not supported for vpc")
+            if self.params['runtime_type'] == 'on-prem':
+                logger.fatal("get-config-python is not supported for on-prem")
+            else:
+                logger.fatal("get-config-python is not supported for vpc")
             sys.exit(-1)
     
     def config_json(self):
@@ -538,7 +544,10 @@ class Build:
 
             logger.info('a json config file has been written to {}.'.format(repo_regfile_name+'.enc'))
         else:
-            logger.fatal("get-config-json is not supported for vpc")
+            if self.params['runtime_type'] == 'on-prem':
+                logger.fatal("get-config-json is not supported for on-prem")
+            else:
+                logger.fatal("get-config-json is not supported for vpc")
             sys.exit(-1)
 
     def instance_env(self):
@@ -820,3 +829,4 @@ if __name__ == '__main__':
         build.instance_env()
     else:
         logger.fatal("unknown command: " + command)
+        
