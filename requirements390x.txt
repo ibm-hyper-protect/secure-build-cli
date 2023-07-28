@@ -1,0 +1,3 @@
+pip3 install requests
+apt-get install -y python3-openssl
+pip3 install python-gnupg
