@@ -616,7 +616,7 @@ You can skip steps 1 to 4, when updating from HPSB version 1.3.0.9 to 1.3.0.10.
 
 6. Update the instance
 ```buildoutcfg
-ibmcloud hpvs instance-update SBContainer -i 1.3.0.11 --rd-path "secure_build.asc" --hostname="sbs.example.com" -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
+ibmcloud hpvs instance-update HPSBContainer -i 1.3.0.11 --rd-path "secure_build.asc" --hostname="sbs.example.com" -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
 ```
 
 Note:
