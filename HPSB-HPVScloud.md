@@ -1,4 +1,4 @@
-The following diagram illustrates a high level structure of SBS, which is provisioned by an administrator by using the [IBM Cloud CLI](https://cloud.ibm.com/docs/cli?topic=cli-hpvs_cli_plugin). This document describes how a developer can interact with the server by using the `build.py` script. A developer prepares the source code of an application with Dockerfile, in a source code repository such as GitHub. The build server pulls the source code, builds a container image by using the Dockerfile, signs it, and pushes it to a container registry, such as Docker Hub. During the build process, it also creates a manifest file and signs it.
+The following diagram illustrates a high level structure of Hyper Protect Secure Build (HPSB) server, which is provisioned by an administrator by using the [IBM Cloud CLI](https://cloud.ibm.com/docs/cli?topic=cli-hpvs_cli_plugin). This document describes how a developer can interact with the server by using the `build.py` script. A developer prepares the source code of an application with Dockerfile, in a source code repository such as GitHub. The build server pulls the source code, builds a container image by using the Dockerfile, signs it, and pushes it to a container registry, such as Docker Hub. During the build process, it also creates a manifest file and signs it.
 
 Optionally, it can push the manifest to Cloud Object Storage, or the developer can download it on a local file system. The build server can also export and import its state as a single file, which includes signing keys of the image and manifest, with build parameters. When exported, the state is encrypted in such a way that the developer or IBM cannot decrypt the state image outside the enclave. It can be decrypted only inside the enclave. The encrypted state image can be pushed to Cloud Object Storage, or the developer can download it on a local file system.
 
@@ -10,7 +10,7 @@ Optionally, it can push the manifest to Cloud Object Storage, or the developer c
 
 The following is a list of hardware or software requirements:
 - Linux management server from where you can run the build CLI tool (Linux workstation or VM).
-  - x86 architecture (recommended 2 CPUs/4GB memory or more)
+  - x86 or s390x architecture (recommended 2 CPUs/4GB memory or more)
   - Ubuntu 20.04 or 18.04 (64 bit)
   - Python 3.8 (Python 2.x is not supported)
 - Access to GitHub for hosting the source code.
@@ -18,11 +18,11 @@ The following is a list of hardware or software requirements:
 - Access to IBM Cloud Registry or DockerHub.
 - (Optional) Access to IBM Cloud Object Storage (COS) Service.
 - Access to IBM Hyper Protect Virtual Servers.
-- Registration definition file of Secure Build Server (secure_build.asc) from [step 2](https://cloud.ibm.com/docs/hp-virtual-servers?topic=hp-virtual-servers-imagebuild#deploysecurebuild).
+- Registration definition file of Hyper Protect Secure Build server (secure_build.asc) from [step 2](https://cloud.ibm.com/docs/hp-virtual-servers?topic=hp-virtual-servers-imagebuild#deploysecurebuild).
 
 
 ## Install the Secure Build CLI
-The CLI script is written in Python and has been tested using Python 3.6.9. You must install Python3 and pip3, if you don't have them on your client system. The `build.py` is the main script that comes with secure-build-cli. This script helps you to interact and do the required operations on the SBS instance after it is created by using the IBM Cloud CLI. For systems that run Ubuntu, you can run the following commands to install them.
+The CLI script is written in Python and has been tested using Python 3.8. You must install Python3 and pip3, if you don't have them on your client system. The `build.py` is the main script that comes with secure-build-cli. This script helps you to interact and do the required operations on the HPSB instance after it is created by using the IBM Cloud CLI. For systems that run Ubuntu, you can run the following commands to install them.
 ```
 apt-get update
 apt-get install python3 python3-pip
@@ -37,6 +37,7 @@ cd secure-build-cli
 pip3 install -r requirements.txt
 ```
 
+**Important:** Replace the command entry `pip3 install -r requirements.txt` with `sh requirments390x.txt` to install the dependencies if you are using a Linux management server on the s390x architecture.
 
 ## Preparing the configuration
 Create the `sbs-config.json` file in any location you choose on your local machine, and add the following content in the file:
@@ -78,10 +79,10 @@ Create the `sbs-config.json` file in any location you choose on your local machi
 
 Where
 ```
-HOSTNAME - Hostname of the SBS server which will be used while generating certificates and communicating with the secure build server.
+HOSTNAME - Hostname of the HPSB server which will be used while generating certificates and communicating with the secure build server.
 RUNTIME_TYPE - set to classic to leverage [IBM Cloud Hyper Protect Virtual Servers](https://cloud.ibm.com/catalog/services/hyper-protect-virtual-server)
 CICD_PORT - port on which a build service is running (default: 443).
-IMAGE_TAG - image tag of the container image to be deployed as SBS server. Use "1.3.0.10" unless otherwise noted.
+IMAGE_TAG - image tag of the container image to be deployed as HPSB server. Use "1.3.0.11" unless otherwise noted.
 GITHUB_KEY_FILE - Private key path to access your GitHub repo.
 GITHUB_URL - GitHub URL.
 GITHUB_BRANCH - GitHub branch name.
@@ -146,14 +147,14 @@ Note:
      ```buildoutcfg
      ./build.py instance-env --env sbs-config.json
      ```
-  6. Run the following command to update the SBS instance (in the case of certificate expiration, you need not update the hostname):
+  6. Run the following command to update the HPSB instance (in the case of certificate expiration, you need not update the hostname):
      ```buildoutcfg
-     ibmcloud hpvs instance-update SBContainer --rd-path secure_build.asc -i 1.3.0.10 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
+     ibmcloud hpvs instance-update SBContainer --rd-path secure_build.asc -i 1.3.0.11 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
      ```
 
 Also see [Additional Build Parameters](additional-build-parameters.md).
 
-## Deploying the Secure Build Server
+## Deploying the Hyper Protect Secure Build server
 
 Complete the following steps:
 
@@ -211,15 +212,15 @@ Note: Update the IBM Cloud CLI if it is installed already.
 ./build.py instance-env --env <path>/sbs-config.json
 ```
 
-6. Create the SBS instance on cloud. You can copy and paste the output from `instance-env` command as command-line parameters for the `instance-create` command.
+6. Create the HPSB instance on cloud. You can copy and paste the output from `instance-env` command as command-line parameters for the `instance-create` command.
 ```buildoutcfg
-ibmcloud hpvs instance-create SBContainer lite-s dal13 --rd-path secure_build.asc -i 1.3.0.10 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
+ibmcloud hpvs instance-create SBContainer lite-s dal13 --rd-path secure_build.asc -i 1.3.0.11 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
 ```
 Where:
-- SBContainer is the name of the SBS instance to be created.
+- SBContainer is the name of the HPSB instance to be created.
 - lite-s is the plan name.
 - dal13 is the region name.
-- 1.3.0.10 is the image tag of Secure Docker Build docker image.
+- 1.3.0.11 is the image tag of Secure Docker Build docker image.
 - hostname is the server hostname that was given in sbs-config.json.
 
 To know more details about which plan to use and which region to use, see [hpvs instance-create](https://cloud.ibm.com/docs/hpvs-cli-plugin?topic=hpvs-cli-plugin-hpvs_cli_plugin#create_instance).
@@ -235,10 +236,10 @@ After the instance is up and running, you can see `Public IP address` in the ins
 10.20.x.xx  abc.test.com
 ```
 
-## How to build image by using SBS
-After you create the SBS instance, complete the following steps to build your image securely:  
+## How to build image by using HPSB
+After you create the HPSB instance, complete the following steps to build your image securely:  
 
-1. Check the status of SBS.
+1. Check the status of HPSB.
 ```buildoutcfg
 ./build.py status --env <path>/sbs-config.json
 INFO:__main__:status: response={
@@ -292,9 +293,9 @@ When an error occurs, the `status` response shows the command that caused the er
     "status": "exiting due to a non-zero return value: 1, cmd: docker build --disable-content-trust=false -t docker.io/<user_name>/nginxapp:latest -f Dockerfile ."
 }
 ```
-To stop a long-running build process, see [How to stop and clean up a build process](SBS-HPVScloud.md#how-to-stop-and-clean-up-a-build-process).
+To stop a long-running build process, see [How to stop and clean up a build process](HPSB-HPVScloud.md#how-to-stop-and-clean-up-a-build-process).
 
-## How to deploy the image that is built by using SBS
+## How to deploy the image that is built by using HPSB
 Complete the following steps:
 
 1. Get an encrypted registration definition file.
@@ -340,7 +341,7 @@ ibmcloud hpvs instance-create container_name lite-s dal13 --rd-path sbs.enc -i i
 ```
 
 ## Manifest file
-The SBS instance creates a manifest file at each successful build as a snapshot of build materials for audit purposes. The developer can verify the integrity of the built image and the artifacts used for building the image. Using this Manifest file is optional.
+The HPSB instance creates a manifest file at each successful build as a snapshot of build materials for audit purposes. The developer can verify the integrity of the built image and the artifacts used for building the image. Using this Manifest file is optional.
 
 ## How to store Manifest file in IBM Cloud Object Storage
 
@@ -355,7 +356,7 @@ The SBS instance creates a manifest file at each successful build as a snapshot 
 `COS_ENDPOINT` specifies the public endpoint of your COS instance (e.g. https://s3.us-east.cloud-object-storage.appdomain.cloud). Don't forget the leading `https://`.
 You need to create the bucket specified by `MANIFEST_BUCKET_NAME` if it doesn't exist.
 
-2. Update the SBS instance with the new COS parameters.
+2. Update the HPSB instance with the new COS parameters.
 ```buildoutcfg
 ./build.py update --env <path>/sbs-config.json
 ```
@@ -370,7 +371,7 @@ This will store your manifest file to IBM Cloud Object Storage.
 
 ## How to get the Manifest file
 
-1. Get the latest manifest file directly from SBS.
+1. Get the latest manifest file directly from HPSB.
 ```buildoutcfg
 ./build.py get-manifest --env <path>/sbs-config.json
 ```
@@ -398,19 +399,19 @@ tar -xvf manifest.docker.io.<user_name>.nginxapp.v1-d14cdc8.2021-02-04_13-25-52.
 
 You will see a data and git folder.
 - The data directory provides the `build.json` and `build.log` files which contain the build status and the build log, respectively.
-- The git directory contains the snapshot of the cloned git repository of the source code on the SBS instance when the build was completed.
+- The git directory contains the snapshot of the cloned git repository of the source code on the HPSB instance when the build was completed.
 
-## How to extract Public Key Used for Signing Container Image inside SBS
+## How to extract Public Key Used for Signing Container Image inside HPSB
 ```buildoutcfg
 ./build.py get-signed-image-publickey --env <path>/sbs-config.json
 ```
 After you run this command, the <repo_name>'public.key' template file is created, which contains the public key that is used to sign the container image.
 
 ## State image
-The state image contains the private signing key, which is generated when a built image is pushed to a container registry for the first time. It is encrypted by using two SECRETS. One is generated by `build.py` and stored in your `sbs-config.json`. The other one is included in the SBS image.
+The state image contains the private signing key, which is generated when a built image is pushed to a container registry for the first time. It is encrypted by using two SECRETS. One is generated by `build.py` and stored in your `sbs-config.json`. The other one is included in the HPSB image.
 
 Why do we need the state image?
-You need it to recover the signing key and additional SBS internal states to build the image in a new SBS instance after the original instance is deleted or corrupted.
+You need it to recover the signing key and additional HPSB internal states to build the image in a new HPSB instance after the original instance is deleted or corrupted.
 
 ## How to get the state image
 
@@ -457,14 +458,14 @@ docker.io.<user_name>.sbs22.s390x-v0.1-60fd72e.2020-10-21_07-20-08.516797
 ## How to recover the state image
 Complete the following steps:
 
-1. Create a new SBS instance as mentioned in the section [Deploying the Secure Build Server](SBS-HPVScloud.md#deploying-the-secure-build-server), with the same secret that was used to get the state image, otherwise the post state image operation fails.
+1. Create a new HPSB instance as mentioned in the section [Deploying the Hyper Protect Secure Build server](HPSB-HPVScloud.md#deploying-the-secure-build-server), with the same secret that was used to get the state image, otherwise the post state image operation fails.
 
 2. Map the Public IP address with the hostname provided for the server in /etc/hosts file.
 ```buildoutcfg
 10.20.x.xx  abc.test.com
 ```
 
-3. Check the status of SBS.
+3. Check the status of HPSB.
 ```buildoutcfg
 ./build.py status --env <path>/sbs-config.json
 ```
@@ -497,7 +498,7 @@ Use the `--state-image` option to specify the state image file you downloaded pr
 ## How to recover the state image from Cloud Object Storage
 Complete the following steps:  
 
-1. Create a new SBS server as mentioned in the section [Deploying the Secure Build Server](SBS-HPVScloud.md#deploying-the-secure-build-server), and use the same secret that was used to get the state image, otherwise the post state image operation fails.
+1. Create a new HPSB server as mentioned in the section [Deploying the Hyper Protect Secure Build server](HPSB-HPVScloud.md#deploying-the-secure-build-server), and use the same secret that was used to get the state image, otherwise the post state image operation fails.
 
 2. You can list the Hyper Protect Virtual Servers instances.
 ```buildoutcfg
@@ -510,7 +511,7 @@ After the instance is up and running, you can see `Public IP address` in the ins
 10.20.x.xx  abc.test.com
 ```
 
-4. Check the status of SBS.
+4. Check the status of HPSB.
 ```buildoutcfg
 ./build.py status --env <path>/sbs-config.json
 ```
@@ -547,16 +548,16 @@ Use the `--name` option to specifiy the name of the state image on COS, which is
 ```
 
 ## How to stop and clean up a build process
-SBS can take one build task at a time. If you want to start another build before an on-going
+HPSB can take one build task at a time. If you want to start another build before an on-going
 build completes successfully or prematurely with an error, you need to stop and clean up
 the on-going build first.
 
-1. You can always check the status of SBS using the `status` command.
+1. You can always check the status of HPSB using the `status` command.
 ```buildoutcfg
 ./build.py status --env <path>/sbs-config.json
 ```
 
-2. Clean up SBS if you want to run another build without waiting for an on-going build to complete.
+2. Clean up HPSB if you want to run another build without waiting for an on-going build to complete.
 ```buildoutcfg
 ./build.py clean --env <path>/sbs-config.json
 ```
@@ -586,13 +587,13 @@ Complete the following steps:
 Note: After the secret is updated, you cannot use a state image obtained using the previous one. Consider obtaining a state image again with the new secret.
 
 
-## Updating the Secure Build Server instance to the latest image
+## Updating the Hyper Protect Secure Build server instance to the latest image
 
-You can skip steps 1 to 4, when updating from SBS version 1.3.0.9 to 1.3.0.10.
+You can skip steps 1 to 4, when updating from HPSB version 1.3.0.9 to 1.3.0.10.
 
-1. Export the state image as mentioned in the section [How to get the state image](SBS-HPVScloud.md#how-to-get-the-state-image). This is to ensure that you have a backup.
+1. Export the state image as mentioned in the section [How to get the state image](HPSB-HPVScloud.md#how-to-get-the-state-image). This is to ensure that you have a backup.
 
-2. Modify the `sbs-config.json` file for 1.3.0.10 according to the following instructions:
+2. Modify the `sbs-config.json` file for 1.3.0.11 according to the following instructions:
    1. Delete the `UUID` parameter.
    2. Add the `HOSTNAME`parameter.
    3. Delete the `CICD_PUBLIC_IP ` parameter.
@@ -615,7 +616,7 @@ You can skip steps 1 to 4, when updating from SBS version 1.3.0.9 to 1.3.0.10.
 
 6. Update the instance
 ```buildoutcfg
-ibmcloud hpvs instance-update SBContainer -i 1.3.0.9 --rd-path "secure_build.asc" --hostname="sbs.example.com" -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
+ibmcloud hpvs instance-update HPSBContainer -i 1.3.0.11 --rd-path "secure_build.asc" --hostname="sbs.example.com" -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
 ```
 
 Note:
@@ -628,7 +629,7 @@ ibmcloud hpvs instance
 ```
 The following is an example of the output.
 ```
-Name                  SBSContainer
+Name                  HPSBContainer
 CRN                   crn:v1:staging:public:hpvs:dal13:a/1075962b93044362a562c8deebbfba2e:0b2df6e9-ec2c-4b4a-87dd-60f53f6a2a0d::
 Location              dal13
 Cloud tags
@@ -643,7 +644,7 @@ Memory                2048 MiB
 Processors            1 vCPUs
 Image type            self-provided
 Image OS              self-defined
-Image name            de.icr.io/zaas-hpvsop-prod/secure-docker-build:1.3.0.10
+Image name            de.icr.io/zaas-hpvsop-prod/secure-docker-build:1.3.0.11
 Environment           CLIENT_CA=...
                       CLIENT_CRT=...
                       SERVER_CRT=...
@@ -654,14 +655,14 @@ Created               2023-04-21
 ```
 
 8. Update the following parameters of the `sbs-config.json` configuration file:
-   - "build_image_tag": "1.3.0.10" 
-   - "RUNTIME_TYPE": "classic"  Note that this parameter is only needed when you upgrade the instance from 1.3.0.8 or earlier to 1.3.0.10.
+   - "build_image_tag": "1.3.0.11" 
+   - "RUNTIME_TYPE": "classic"  Note that this parameter is only needed when you upgrade the instance from 1.3.0.8 or earlier to 1.3.0.10 or later.
    - If the base image used in Docker file is Red Hat Simple Signed on IBM Cloud Container Registry, you must provide the 'ICR_BASE_REPO', and 'ICR_BASE_REPO_PUBLIC_KEY' parameters.
    - If the built image is pushed to IBM Cloud Container Registry, set "DOCKER_CONTENT_TRUST_PUSH_SERVER": "https://<domain_name>".
 
-9. Update the SBS instance by running the following command:
+9. Update the HPSB instance by running the following command:
    ```buildoutcfg
    ./build.py update --env <path>/sbs-config.json
    ```
 
-### Note: To bring up the SBS Container on IBM Cloud Hyper Protect Virtual Servers for VPC (HPVS for VPC), follow the instructions in [this](SBS-VPC.md) document.  
+### Note: To bring up the HPSB Container on IBM Cloud Hyper Protect Virtual Servers for VPC (HPVS for VPC), follow the instructions in [this](HPSB-VPC.md) document.  
