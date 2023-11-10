@@ -252,7 +252,7 @@ class Build:
             resp = request('https://' + self.cicd_socket_address() + uri, params=params, json=json_data,
                            cert=self.client_crt_key, verify=False if noverify else self.client_ca)
         except requests.exceptions.SSLError as e:
-            logger.info('build: {} SSLError [upload a signed server certificate to SBS if you haven\'t]'.format(api))
+            logger.info('build: {} SSLError [upload a signed server certificate to HPSB if you haven\'t]'.format(api))
             logger.debug('build: {} SSLError e={}'.format(api, e))
             return '', -1
         except requests.exceptions.ConnectionError as e:
@@ -297,7 +297,11 @@ class Build:
             if self.verbose > 1:
                 logger.info('renewing a secret')
             self.params['new_secret'] = base64.b64encode(os.urandom(128)).decode('UTF-8')
-      
+        
+        if (self.params['runtime_type'] not in ["on-prem", "classic", "vpc"]) :
+            logger.error ("Acceptable values for RUNTIME_TYPE are on-prem, classic, vpc ")
+            sys.exit(-1)   
+            
         if self.params['runtime_type'] != '' and update:
             # Creating runtime_type file if it does not exist
             if client_certificate.is_client_using_own_keys == False:
@@ -686,6 +690,8 @@ class Build:
             sys.exit(-1)
 
         signed_image_public_key = resp['public_key']
+        if self.params['docker_push_server'] != "docker.io" and self.params['runtime_type'] != "classic":
+            signed_image_public_key = base64.b64encode(signed_image_public_key.encode('utf-8')).decode('utf-8')
         repo_name = resp['repository_name'].replace("/","-")
         if self.verbose > 0:
             logger.info("get-signed-image-publickey response=" + signed_image_public_key)
