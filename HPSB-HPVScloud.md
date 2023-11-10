@@ -589,7 +589,7 @@ Note: After the secret is updated, you cannot use a state image obtained using t
 
 ## Updating the Hyper Protect Secure Build server instance to the latest image
 
-**Important:** If you are updating from HPSB version earlier than 1.3.0.9 to 1.3.0.10, complete the instructions from steps 1 to 4. Otherwise, you can start from step 5.
+**Important:** If you are updating from HPSB version earlier than 1.3.0.9 to 1.3.0.12, complete the instructions from steps 1 to 4. Otherwise, you can start from step 5.
 
 1. Export the state image as mentioned in the section [How to get the state image](HPSB-HPVScloud.md#how-to-get-the-state-image). This is to ensure that you have a backup.
 
