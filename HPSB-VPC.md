@@ -210,6 +210,7 @@ env: |
       ingestionKey: **********************************
       port: 14XX
   volumes:
+    hpsb:
       apiKey: *******************
       volumeName: "test1"
       seed: "testing"
