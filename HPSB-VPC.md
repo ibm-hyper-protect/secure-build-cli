@@ -197,7 +197,7 @@ Complete the following steps:
 
 Note the values of CLIENT_CRT, CLIENT_CA, SERVER_CRT, SERVER_KEY
 
-4. Generate a contract with the `workload` and `env` sections. Note that the HPSB needs a data volume attached to the instance, therefore you must add the data volume in the `env` section with volume key `hpsb`. The value of `apiKey` is your cloud account API key where the volume disk is created. For more in about creating the contract, see [About the contract](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se).
+4. Generate a contract with the `workload` and `env` sections. Note that the HPSB needs a data volume attached to the instance, therefore you must add the data volume in the `env` section with volume key `hpsb`. The value of `apiKey` is your cloud account API key where the volume disk is created. For more information about creating the contract, see [About the contract](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se).
 
 ## An example of the ENV section of the contract
 
