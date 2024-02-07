@@ -15,7 +15,7 @@ Optionally, it can push the manifest to IBM Cloud Object Storage, or the develop
 Ensure that you meet the following hardware or software requirements:
 - Linux management server from where you can run the build CLI tool (Linux workstation or VM).
   - x86 or s390x architecture (recommended 2 CPUs/4GB memory or more)
-  - Ubuntu 20.04 or 22.04 (64 bit)
+  - Ubuntu 20.04 and 22.04 (64 bit)
   - Python 3.8 (Python 2.x is not supported)
 - Access to GitHub, for hosting the source code.
 - Dockerfile (everything that you need to build your container image).
@@ -79,7 +79,7 @@ Where
 ```
 HOSTNAME - Hostname of the HPSB server which will be used while generating certificates and communicating with the secure build server.
 CICD_PORT - port on which a build service is running (default: 443).
-IMAGE_TAG - image tag of the container image to be deployed as HPSB server. Use "1.3.0.12" unless otherwise noted.
+IMAGE_TAG - image tag of the container image to be deployed as HPSB server. Use "1.3.0.13" unless otherwise noted.
 CONTAINER_NAME - Name of the HPSB server instance which you want to create on VPC. This name can be different from the name which you use on VPC. The name is used as a part of a certificate file name. You can choose any valid string as a file name.
 GITHUB_KEY_FILE - Private key path to access your GitHub repo.
 GITHUB_URL - GitHub URL.
@@ -185,7 +185,7 @@ Complete the following steps:
          - The CA certificate should not be compromised or revoked.
          - Third-party certificates are not supported.
 
-2. Use build.py to create the server certificate signed by the CA certificate generated that was generated in the previous  step. It will be setup on the server for secure communication.
+2. Use build.py to create the server certificate signed by the CA certificate generated that was generated in the previous step. It will be setup on the server for secure communication.
       ```buildoutcfg
       ./build.py create-server-cert --env <path>/sbs-config.json
       ```
@@ -195,7 +195,7 @@ Complete the following steps:
 ./build.py instance-env --env <path>/sbs-config.json
 ```
 
-Note the values of CLIENT_CRT, CLIENT_CA, SERVER_CRT, SERVER_KEY
+Note the values of CLIENT_CRT, CLIENT_CA, SERVER_CRT, and SERVER_KEY.
 
 4. Generate a contract with the `workload` and `env` sections. Note that the HPSB needs a data volume attached to the instance, therefore you must add the data volume in the `env` section with volume key `hpsb`. The value of `apiKey` is your cloud account API key where the volume disk is created. For more information about creating the contract, see [About the contract](https://cloud.ibm.com/docs/vpc?topic=vpc-about-contract_se).
 
