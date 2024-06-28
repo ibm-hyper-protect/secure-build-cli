@@ -82,7 +82,7 @@ Where
 HOSTNAME - Hostname of the HPSB server which will be used while generating certificates and communicating with the secure build server.
 RUNTIME_TYPE - set to classic to leverage [IBM Cloud Hyper Protect Virtual Servers](https://cloud.ibm.com/catalog/services/hyper-protect-virtual-server)
 CICD_PORT - port on which a build service is running (default: 443).
-IMAGE_TAG - image tag of the container image to be deployed as HPSB server. Use "1.3.0.13" unless otherwise noted.
+IMAGE_TAG - image tag of the container image to be deployed as HPSB server. Use "1.3.0.14" unless otherwise noted.
 GITHUB_KEY_FILE - Private key path to access your GitHub repo.
 GITHUB_URL - GitHub URL.
 GITHUB_BRANCH - GitHub branch name.
@@ -149,7 +149,7 @@ Note:
      ```
   6. Run the following command to update the HPSB instance (in the case of certificate expiration, you need not update the hostname):
      ```buildoutcfg
-     ibmcloud hpvs instance-update SBContainer --rd-path secure_build.asc -i 1.3.0.13 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
+     ibmcloud hpvs instance-update SBContainer --rd-path secure_build.asc -i 1.3.0.14 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
      ```
 
 Also see [Additional Build Parameters](additional-build-parameters.md).
@@ -214,13 +214,13 @@ Note: Update the IBM Cloud CLI if it is installed already.
 
 6. Create the HPSB instance on cloud. You can copy and paste the output from `instance-env` command as command-line parameters for the `instance-create` command.
 ```buildoutcfg
-ibmcloud hpvs instance-create SBContainer lite-s dal13 --rd-path secure_build.asc -i 1.3.0.13 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
+ibmcloud hpvs instance-create SBContainer lite-s dal13 --rd-path secure_build.asc -i 1.3.0.14 --hostname sbs.example.com -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
 ```
 Where:
 - SBContainer is the name of the HPSB instance to be created.
 - lite-s is the plan name.
 - dal13 is the region name.
-- 1.3.0.13 is the image tag of Secure Docker Build docker image.
+- 1.3.0.14 is the image tag of Secure Docker Build docker image.
 - hostname is the server hostname that was given in sbs-config.json.
 
 To know more details about which plan to use and which region to use, see [hpvs instance-create](https://cloud.ibm.com/docs/hpvs-cli-plugin?topic=hpvs-cli-plugin-hpvs_cli_plugin#create_instance).
@@ -589,11 +589,11 @@ Note: After the secret is updated, you cannot use a state image obtained using t
 
 ## Updating the Hyper Protect Secure Build server instance to the latest image
 
-**Important:** If you are updating from HPSB version earlier than 1.3.0.9 to 1.3.0.13, complete the instructions from steps 1 to 4. Otherwise, you can start from step 5.
+**Important:** If you are updating from HPSB version earlier than 1.3.0.9 to 1.3.0.14, complete the instructions from steps 1 to 4. Otherwise, you can start from step 5.
 
 1. Export the state image as mentioned in the section [How to get the state image](HPSB-HPVScloud.md#how-to-get-the-state-image). This is to ensure that you have a backup.
 
-2. Modify the `sbs-config.json` file for 1.3.0.13 according to the following instructions:
+2. Modify the `sbs-config.json` file for 1.3.0.14 according to the following instructions:
    1. Delete the `UUID` parameter.
    2. Add the `HOSTNAME`parameter.
    3. Delete the `CICD_PUBLIC_IP ` parameter.
@@ -616,7 +616,7 @@ Note: After the secret is updated, you cannot use a state image obtained using t
 
 6. Update the instance
 ```buildoutcfg
-ibmcloud hpvs instance-update HPSBContainer -i 1.3.0.13 --rd-path "secure_build.asc" --hostname="sbs.example.com" -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
+ibmcloud hpvs instance-update HPSBContainer -i 1.3.0.14 --rd-path "secure_build.asc" --hostname="sbs.example.com" -e CLIENT_CRT=... -e CLIENT_CA=... -e SERVER_CRT=... -e SERVER_KEY=...
 ```
 
 Note:
@@ -644,7 +644,7 @@ Memory                2048 MiB
 Processors            1 vCPUs
 Image type            self-provided
 Image OS              self-defined
-Image name            de.icr.io/zaas-hpvsop-prod/secure-docker-build:1.3.0.13
+Image name            de.icr.io/zaas-hpvsop-prod/secure-docker-build:1.3.0.14
 Environment           CLIENT_CA=...
                       CLIENT_CRT=...
                       SERVER_CRT=...
@@ -655,7 +655,7 @@ Created               2023-04-21
 ```
 
 8. Update the following parameters of the `sbs-config.json` configuration file:
-   - "build_image_tag": "1.3.0.13" 
+   - "build_image_tag": "1.3.0.14" 
    - "RUNTIME_TYPE": "classic"  Note that this parameter is only needed when you upgrade the instance from 1.3.0.8 or earlier to 1.3.0.10 or later.
    - If the base image used in Docker file is Red Hat Simple Signed on IBM Cloud Container Registry, you must provide the 'ICR_BASE_REPO', and 'ICR_BASE_REPO_PUBLIC_KEY' parameters.
    - If the built image is pushed to IBM Cloud Container Registry, set "DOCKER_CONTENT_TRUST_PUSH_SERVER": "https://<domain_name>".
