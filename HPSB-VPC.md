@@ -79,7 +79,7 @@ Where
 ```
 HOSTNAME - Hostname of the HPSB server which will be used while generating certificates and communicating with the secure build server.
 CICD_PORT - port on which a build service is running (default: 443).
-IMAGE_TAG - image tag of the container image to be deployed as HPSB server. Use "1.3.0.17" unless otherwise noted.
+IMAGE_TAG - image tag of the container image to be deployed as HPSB server. Use "1.3.0.18" unless otherwise noted.
 CONTAINER_NAME - Name of the HPSB server instance which you want to create on VPC. This name can be different from the name which you use on VPC. The name is used as a part of a certificate file name. You can choose any valid string as a file name.
 GITHUB_KEY_FILE - Private key path to access your GitHub repo.
 GITHUB_URL - GitHub URL.
@@ -205,10 +205,10 @@ Note the values of CLIENT_CRT, CLIENT_CA, SERVER_CRT, and SERVER_KEY.
 env: |
   type: env
   logging:
-    logDNA:
-      hostname: <host name of the Log Analysis instance>
-      ingestionKey: **********************************
-      port: 14XX
+    logRouter:
+      hostname: <host name of the service instance> /
+      iamApiKey: <iamApiKey of the service instance> / xxxx
+      port: <port of the service instance(443)>
   volumes:
     hpsb:
       apiKey: *******************
@@ -582,7 +582,7 @@ Complete the following steps:
 ```
 ./build.py post-state-image -env <path>/sbs-config.json --name docker.io.<user_name>.sbs22.s390x-v0.1-60fd72e.2020-10-21_07-20-08.516797 {-state-bucket-name <your_bucket_name>}
 ```
-  - Use the `--state-bucket-name` option, if you want to override the parameter in `sbs-config.json` or you don't have one in the file. 
+  - Use the `--state-bucket-name` option, if you want to override the parameter in `sbs-config.json` or you don't have one in the file.
   - Use the `--name` option to specifiy the name of the state image on COS, which is the same as the name of the meta data file you downloaded with the `get-state-image` command.
 
 5. Update the configuration.
