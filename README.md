@@ -5,7 +5,7 @@ By using Hyper Protect Secure Build (HPSB), you can build a trusted container im
 
 * To setup and use HPSB in IBM Cloud Hyper Protect Virtual Servers for VPC, see [HPSB Deployment on HPVS for VPC](HPSB-VPC.md).
 
-* To setup and use HPSB in IBM Hyper Protect Virtual Servers for Gen-2 On-Prem, see [this topic](https://www.ibm.com/docs/en/hpvs/2.1.x?topic=building-your-applications-hyper-protect-secure-build).
+* To setup and use HPSB in IBM Hyper Protect Virtual Servers for Gen-2 On-Prem, see [this topic](https://www.ibm.com/docs/en/hpvs/2.2.x?topic=building-your-applications-hyper-protect-secure-build).
 
 **Note:** It is recommend that you use IBM Cloud Hyper Protect Virtual Servers for VPC, which is the next generation of IBM Cloud Hyper Protect Virtual Servers that offers an hourly billing, and improved logging support, beside other benefits.
 
