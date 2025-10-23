@@ -15,7 +15,7 @@ Optionally, it can push the manifest to IBM Cloud Object Storage, or the develop
 Ensure that you meet the following hardware or software requirements:
 - Linux management server from where you can run the build CLI tool (Linux workstation or VM).
   - x86 or s390x architecture (recommended 2 CPUs/4GB memory or more)
-  - Ubuntu 24.04 and 22.04 (64 bit)
+  - Ubuntu 22.04 and 24.04 (64 bit)
   - Python 3.8 (Python 2.x is not supported)
 - Access to GitHub, for hosting the source code.
 - Dockerfile (everything that you need to build your container image).
