@@ -16,7 +16,7 @@ Ensure that you meet the following hardware or software requirements:
 - Linux management server from where you can run the build CLI tool (Linux workstation or VM).
   - x86 or s390x architecture (recommended 2 CPUs/4GB memory or more)
   - Ubuntu 22.04 and 24.04 (64 bit)
-  - Python 3.8 (Python 2.x is not supported)
+  - Python 3.12 (Python 2.x is not supported)
 - Access to GitHub, for hosting the source code.
 - Dockerfile (everything that you need to build your container image).
 - Access to IBM Cloud Registry or DockerHub.
@@ -27,7 +27,7 @@ Ensure that you meet the following hardware or software requirements:
 
 ## Install the Secure Build CLI
 
-The CLI script is written in Python and has been tested using Python 3.8. You must install Python3 and pip3, if you don't have them on your client system. The `build.py` is the main script that comes with secure-build-cli. This script helps you to interact and complete the required operations on the HPSB instance after it is created by using the IBM Cloud CLI. For systems that run Ubuntu, you can run the following commands to install them:
+The CLI script is written in Python and has been tested using Python 3.12. You must install Python3 and pip3, if you don't have them on your client system. The `build.py` is the main script that comes with secure-build-cli. This script helps you to interact and complete the required operations on the HPSB instance after it is created by using the IBM Cloud CLI. For systems that run Ubuntu, you can run the following commands to install them:
 ```
 apt-get update
 apt-get install python3 python3-pip
