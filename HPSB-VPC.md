@@ -16,7 +16,7 @@ Ensure that you meet the following hardware or software requirements:
 - Linux management server from where you can run the build CLI tool (Linux workstation or VM).
   - x86 or s390x architecture (recommended 2 CPUs/4GB memory or more)
   - Ubuntu 22.04 and 24.04 (64 bit)
-  - Python 3.12 (Python 2.x is not supported)
+  - Python 3.12
 - Access to GitHub, for hosting the source code.
 - Dockerfile (everything that you need to build your container image).
 - Access to IBM Cloud Registry or DockerHub.
