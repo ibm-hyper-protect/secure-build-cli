@@ -29,11 +29,13 @@ class JsonFilter(logging.Filter):
         if not isinstance(msg, str):
             msg = str(msg)
         for key in self._json_keys:
-            pattern = '"' + key + '":\s*"[^"]+"'
+            #pattern = '"' + key + '":\s*"[^"]+"'
+            pattern = r'"' + key + r'":\s*"[^"]+"'
             output = '"' + key + '": "<' + key + '>"'
             msg = re.sub(pattern, output, msg)
 
-            pattern = '"' + key + '":\s*""'
+            #pattern = '"' + key + '":\s*""'
+            pattern = r'"' + key + r'":\s*""'
             output = '"' + key + '": "<null>"'
             msg = re.sub(pattern, output, msg)
 
@@ -45,11 +47,13 @@ class JsonFilter(logging.Filter):
             output = '"' + key + '=<null>"'
             msg = re.sub(pattern, output, msg)
 
-            pattern = '"' + key.lower() + '":\s*"[^"]+"'
+            #pattern = '"' + key.lower() + '":\s*"[^"]+"'
+            pattern = r'"' + key.lower() + r'":\s*"[^"]+"'
             output = '"' + key.lower() + '": "<' + key.lower() + '>"'
             msg = re.sub(pattern, output, msg)
 
-            pattern = '"' + key.lower() + '":\s*""'
+            #pattern = '"' + key.lower() + '":\s*""'
+            pattern = r'"' + key.lower() + r'":\s*""'
             output = '"' + key.lower() + '": "<null>"'
             msg = re.sub(pattern, output, msg)
 
@@ -80,7 +84,8 @@ class TokenFilter(logging.Filter):
     def redact(self, msg):
         if not isinstance(msg, str):
             msg = str(msg)
-        pattern = 'authorization: Bearer [\S]+'
+        #pattern = 'authorization: Bearer [\S]+'
+        pattern = r'authorization: Bearer [\S]+'
         output = 'authorization: Bearer <TOKEN>'
         msg = re.sub(pattern, output, msg)
         return msg
