@@ -1,4 +1,3 @@
-
 #! /usr/bin/python3
 #
 # Licensed Materials - Property of IBM
@@ -71,7 +70,7 @@ def gen_ca(ca_subject, ca_path, ca_key_path):
     ])
 
     ca_cert.add_extensions([
-        crypto.X509Extension(b'basicConstraints', False, b'CA:TRUE'),
+        crypto.X509Extension(b'basicConstraints', True, b'CA:TRUE'),
         crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth'),
         crypto.X509Extension(b'keyUsage', False, b'keyCertSign, cRLSign'),
     ])
