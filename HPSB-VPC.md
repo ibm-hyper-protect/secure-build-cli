@@ -236,7 +236,9 @@ env: |
 ```
 Example: 169.XX.XXX.XXX sbs.example.com
 ```
-**Note:** Enable security groups in Hyper Protect Virtual Servers for VPC, which should accept port 443 in inbound rules.
+**Note:** 
+- Enable security groups in Hyper Protect Virtual Servers for VPC, which should accept port 443 in inbound rules.
+- Default boot volume is now **SDP**. Change it to **General Purpose**, as SDP causes an `Invalid Boot Device` error. For more information, [see Enable Confidential Computing through IBM Cloud with Hyper Protect Virtual Server for VPC](https://cloud.ibm.com/docs/vpc?topic=vpc-financial-transaction-confidential-computing-on-hyper-protect-virtual-server-for-vpc#hpvs-ftcc-step3).
 
 
 ## How to build image by using HPSB
