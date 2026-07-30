@@ -9,7 +9,14 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp
 #
 import random
+import ipaddress
+import datetime
 from OpenSSL import crypto
+from cryptography import x509 as cx509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+from cryptography.hazmat.backends import default_backend
 
 def setX509Attr(x509, attribute):
     try:
@@ -34,143 +41,236 @@ def setX509Name(x509, subject):
         if '=' in attribute:
             setX509Attr(x509, attribute)
 
+# Build a cryptography Name from a subject string
+_SUBJECT_ATTR_MAP = {
+    'C':  NameOID.COUNTRY_NAME,
+    'ST': NameOID.STATE_OR_PROVINCE_NAME,
+    'L':  NameOID.LOCALITY_NAME,
+    'O':  NameOID.ORGANIZATION_NAME,
+    'OU': NameOID.ORGANIZATIONAL_UNIT_NAME,
+    'CN': NameOID.COMMON_NAME,
+}
+
+def _build_name(subject):
+    attrs = []
+    if '/' in subject:
+        parts = subject.split('/')
+        for part in parts:
+            if '=' in part:
+                label, value = part.split('=', 1)
+                oid = _SUBJECT_ATTR_MAP.get(label.strip())
+                if oid:
+                    attrs.append(cx509.NameAttribute(oid, value))
+    elif '=' in subject:
+        label, value = subject.split('=', 1)
+        oid = _SUBJECT_ATTR_MAP.get(label.strip())
+        if oid:
+            attrs.append(cx509.NameAttribute(oid, value))
+    else:
+        attrs.append(cx509.NameAttribute(NameOID.COMMON_NAME, subject))
+    return cx509.Name(attrs)
+
+# Parse a SAN entry string like 'DNS:hostname' or 'IP:1.2.3.4' into a GeneralName
+def _parse_san_entry(entry):
+    entry = entry.strip()
+    if entry.startswith('DNS:'):
+        return cx509.DNSName(entry[4:])
+    elif entry.startswith('IP:'):
+        return cx509.IPAddress(ipaddress.ip_address(entry[3:]))
+    elif entry.startswith('email:'):
+        return cx509.RFC822Name(entry[6:])
+    elif entry.startswith('URI:'):
+        return cx509.UniformResourceIdentifier(entry[4:])
+    else:
+        return cx509.DNSName(entry)
+
 # Used to extract san value from a certificate
 def getSANValue(cert_path):
-     server_cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cert_path).read())
-     san = ''
-     ext_count = server_cert.get_extension_count()
-     for i in range(0, ext_count):
-        ext = server_cert.get_extension(i)
-        if 'subjectAltName' in str(ext.get_short_name()):
-            san = ext.__str__()
-     return san
+    cert_crypto = cx509.load_pem_x509_certificate(open(cert_path, 'rb').read(), backend=default_backend())
+    try:
+        san_ext = cert_crypto.extensions.get_extension_for_class(cx509.SubjectAlternativeName)
+        # Reproduce the OpenSSL text representation, e.g. "DNS:hostname, IP Address:1.2.3.4"
+        parts = []
+        for name in san_ext.value:
+            if isinstance(name, cx509.DNSName):
+                parts.append('DNS:' + name.value)
+            elif isinstance(name, cx509.IPAddress):
+                parts.append('IP Address:' + str(name.value))
+            elif isinstance(name, cx509.RFC822Name):
+                parts.append('email:' + name.value)
+            elif isinstance(name, cx509.UniformResourceIdentifier):
+                parts.append('URI:' + name.value)
+            else:
+                parts.append(str(name))
+        return ', '.join(parts)
+    except cx509.ExtensionNotFound:
+        return ''
 
 
 def gen_ca(ca_subject, ca_path, ca_key_path):
-    ca_key = crypto.PKey()
-    ca_key.generate_key(crypto.TYPE_RSA, 2048)
-    ca_key_bytes = crypto.dump_privatekey(crypto.FILETYPE_PEM, ca_key)
+    # Generate RSA private key
+    ca_key_crypto = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+        backend=default_backend(),
+    )
+
+    ca_key_bytes = ca_key_crypto.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.TraditionalOpenSSL,
+        serialization.NoEncryption(),
+    )
 
     with open(ca_key_path, 'w') as f:
         f.write(ca_key_bytes.decode('utf-8'))
 
-    ca_cert = crypto.X509()
-    ca_cert.set_version(2)
-    ca_cert.set_serial_number(random.randint(50000000,100000000))
+    name = _build_name(ca_subject)
+    serial = random.randint(50000000, 100000000)
+    now = datetime.datetime.now(datetime.timezone.utc)
 
-    ca_subj = ca_cert.get_subject()
-    setX509Name(ca_subj, ca_subject)
+    ca_cert_crypto = (
+        cx509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(ca_key_crypto.public_key())
+        .serial_number(serial)
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(days=365 * 2))
+        .add_extension(cx509.SubjectKeyIdentifier.from_public_key(ca_key_crypto.public_key()), critical=False)
+        .add_extension(cx509.AuthorityKeyIdentifier.from_issuer_public_key(ca_key_crypto.public_key()), critical=False)
+        .add_extension(cx509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .add_extension(cx509.ExtendedKeyUsage([ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
+        .add_extension(cx509.KeyUsage(
+            digital_signature=False, content_commitment=False, key_encipherment=False,
+            data_encipherment=False, key_agreement=False, key_cert_sign=True,
+            crl_sign=True, encipher_only=False, decipher_only=False,
+        ), critical=False)
+        .sign(ca_key_crypto, hashes.SHA256(), backend=default_backend())
+    )
 
-    ca_cert.add_extensions([
-        crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', subject=ca_cert),
-    ])
-
-    ca_cert.add_extensions([
-        crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid:always', issuer=ca_cert),
-    ])
-
-    ca_cert.add_extensions([
-        crypto.X509Extension(b'basicConstraints', True, b'CA:TRUE'),
-        crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth'),
-        crypto.X509Extension(b'keyUsage', False, b'keyCertSign, cRLSign'),
-    ])
-
-    ca_cert.set_issuer(ca_subj)
-    ca_cert.set_pubkey(ca_key)
-
-    ca_cert.gmtime_adj_notBefore(0)
-    ca_cert.gmtime_adj_notAfter(60*60*24*365*2) # 2 years
-
-    ca_cert.sign(ca_key, 'sha256')
-
-    ca_cert_bytes = crypto.dump_certificate(crypto.FILETYPE_PEM, ca_cert)
+    ca_cert_bytes = ca_cert_crypto.public_bytes(serialization.Encoding.PEM)
 
     with open(ca_path, 'w') as f:
         f.write(ca_cert_bytes.decode('utf-8'))
 
+    # Return pyOpenSSL objects so callers using crypto.dump_certificate / crypto.dump_privatekey continue to work
+    ca_cert = crypto.X509.from_cryptography(ca_cert_crypto)
+    ca_key = crypto.PKey.from_cryptography_key(ca_key_crypto)
     return ca_cert, ca_key
 
 def gen_csr(cert_subject, csr_path, cert_key_path):
-    cert_key = crypto.PKey()
-    cert_key.generate_key(crypto.TYPE_RSA, 2048)
-    cert_key_bytes = crypto.dump_privatekey(crypto.FILETYPE_PEM, cert_key)
+    cert_key_crypto = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+        backend=default_backend(),
+    )
+
+    cert_key_bytes = cert_key_crypto.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.TraditionalOpenSSL,
+        serialization.NoEncryption(),
+    )
 
     with open(cert_key_path, 'w') as f:
         f.write(cert_key_bytes.decode('utf-8'))
 
-    csr = crypto.X509Req()
-    csr_subj = csr.get_subject()
-    setX509Name(csr_subj, cert_subject)
-    csr.set_pubkey(cert_key)
-    csr.sign(cert_key, 'sha256')
-    csr_bytes = crypto.dump_certificate_request(crypto.FILETYPE_PEM, csr)
+    name = _build_name(cert_subject)
+    csr_crypto = (
+        cx509.CertificateSigningRequestBuilder()
+        .subject_name(name)
+        .sign(cert_key_crypto, hashes.SHA256(), backend=default_backend())
+    )
+
+    csr_bytes = csr_crypto.public_bytes(serialization.Encoding.PEM)
 
     with open(csr_path, 'w') as f:
         f.write(csr_bytes.decode('utf-8'))
 
-    return csr, cert_key
+    # Return pyOpenSSL PKey so callers using crypto.dump_privatekey continue to work
+    cert_key = crypto.PKey.from_cryptography_key(cert_key_crypto)
+    return csr_crypto, cert_key
 
 def sign_csr(cert_path, csr_path, ca_path, ca_key_path):
-    csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, open(csr_path).read())
-    ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(ca_path).read())
-    ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(ca_key_path).read())
+    csr_crypto = cx509.load_pem_x509_csr(open(csr_path, 'rb').read(), backend=default_backend())
+    ca_cert_crypto = cx509.load_pem_x509_certificate(open(ca_path, 'rb').read(), backend=default_backend())
+    ca_key_crypto = serialization.load_pem_private_key(open(ca_key_path, 'rb').read(), password=None, backend=default_backend())
 
-    cert = crypto.X509()
-    cert.set_version(2)
-    cert.set_serial_number(random.randint(50000000,100000000))
-    cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(60*60*24*365) # 1 year
-    cert.add_extensions([
-    crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'),
-        crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', subject=cert),
-    ])
-    cert.add_extensions([
-        crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid:always', issuer=ca_cert),
-        crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth'),
-        crypto.X509Extension(b'keyUsage', False, b'digitalSignature'),
-    ])
-    cert.add_extensions(csr.get_extensions())
-    cert.set_issuer(ca_cert.get_subject()) # ca subject
-    cert.set_subject(csr.get_subject())
-    cert.set_pubkey(csr.get_pubkey())
-    cert.sign(ca_key, 'sha256') # ca key
+    serial = random.randint(50000000, 100000000)
+    now = datetime.datetime.now(datetime.timezone.utc)
 
-    cert_bytes = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+    builder = (
+        cx509.CertificateBuilder()
+        .subject_name(csr_crypto.subject)
+        .issuer_name(ca_cert_crypto.subject)
+        .public_key(csr_crypto.public_key())
+        .serial_number(serial)
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(days=365))
+        .add_extension(cx509.BasicConstraints(ca=False, path_length=None), critical=False)
+        .add_extension(cx509.SubjectKeyIdentifier.from_public_key(csr_crypto.public_key()), critical=False)
+        .add_extension(cx509.AuthorityKeyIdentifier.from_issuer_public_key(ca_cert_crypto.public_key()), critical=False)
+        .add_extension(cx509.ExtendedKeyUsage([ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
+        .add_extension(cx509.KeyUsage(
+            digital_signature=True, content_commitment=False, key_encipherment=False,
+            data_encipherment=False, key_agreement=False, key_cert_sign=False,
+            crl_sign=False, encipher_only=False, decipher_only=False,
+        ), critical=False)
+    )
+
+    # Copy SAN extension from CSR if present
+    try:
+        san_ext = csr_crypto.extensions.get_extension_for_class(cx509.SubjectAlternativeName)
+        builder = builder.add_extension(san_ext.value, critical=san_ext.critical)
+    except cx509.ExtensionNotFound:
+        pass
+
+    cert_crypto = builder.sign(ca_key_crypto, hashes.SHA256(), backend=default_backend())
+    cert_bytes = cert_crypto.public_bytes(serialization.Encoding.PEM)
 
     with open(cert_path, 'w') as f:
         f.write(cert_bytes.decode('utf-8'))
 
-    return cert 
+    return crypto.X509.from_cryptography(cert_crypto)
 
 def sign_server_csr(cert_path, csr_path, ca_path, ca_key_path, san=[]):
-    csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, open(csr_path).read())
-    ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(ca_path).read())
-    ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(ca_key_path).read())
+    csr_crypto = cx509.load_pem_x509_csr(open(csr_path, 'rb').read(), backend=default_backend())
+    ca_cert_crypto = cx509.load_pem_x509_certificate(open(ca_path, 'rb').read(), backend=default_backend())
+    ca_key_crypto = serialization.load_pem_private_key(open(ca_key_path, 'rb').read(), password=None, backend=default_backend())
 
-    cert = crypto.X509()
-    cert.set_version(2)
-    cert.set_serial_number(random.randint(50000000,100000000))
-    cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(60*60*24*365) # 1 year
-    cert.add_extensions([
-    crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'),
-        crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', subject=cert),
-    ])
-    cert.add_extensions([
-        crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid:always', issuer=ca_cert),
-        crypto.X509Extension(b'extendedKeyUsage', False, b'serverAuth'),
-        crypto.X509Extension(b'keyUsage', False, b'digitalSignature'),
-        crypto.X509Extension(b'subjectAltName', False, ','.join(san).encode()),
-    ])
-    cert.add_extensions(csr.get_extensions())
-    cert.set_issuer(ca_cert.get_subject()) # ca subject
-    cert.set_subject(csr.get_subject())
-    cert.set_pubkey(csr.get_pubkey())
-    cert.sign(ca_key, 'sha256') # ca key
+    serial = random.randint(50000000, 100000000)
+    now = datetime.datetime.now(datetime.timezone.utc)
 
-    cert_bytes = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+    san_names = [_parse_san_entry(entry) for entry in san if entry.strip()]
+
+    builder = (
+        cx509.CertificateBuilder()
+        .subject_name(csr_crypto.subject)
+        .issuer_name(ca_cert_crypto.subject)
+        .public_key(csr_crypto.public_key())
+        .serial_number(serial)
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(days=365))
+        .add_extension(cx509.BasicConstraints(ca=False, path_length=None), critical=False)
+        .add_extension(cx509.SubjectKeyIdentifier.from_public_key(csr_crypto.public_key()), critical=False)
+        .add_extension(cx509.AuthorityKeyIdentifier.from_issuer_public_key(ca_cert_crypto.public_key()), critical=False)
+        .add_extension(cx509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
+        .add_extension(cx509.KeyUsage(
+            digital_signature=True, content_commitment=False, key_encipherment=False,
+            data_encipherment=False, key_agreement=False, key_cert_sign=False,
+            crl_sign=False, encipher_only=False, decipher_only=False,
+        ), critical=False)
+        .add_extension(cx509.SubjectAlternativeName(san_names), critical=False)
+    )
+
+    # Copy additional extensions from CSR (excluding SAN already set above)
+    for ext in csr_crypto.extensions:
+        if ext.oid != cx509.SubjectAlternativeName.oid:
+            builder = builder.add_extension(ext.value, critical=ext.critical)
+
+    cert_crypto = builder.sign(ca_key_crypto, hashes.SHA256(), backend=default_backend())
+    cert_bytes = cert_crypto.public_bytes(serialization.Encoding.PEM)
 
     with open(cert_path, 'w') as f:
         f.write(cert_bytes.decode('utf-8'))
 
-    return cert
+    return crypto.X509.from_cryptography(cert_crypto)

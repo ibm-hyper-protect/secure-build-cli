@@ -11,6 +11,11 @@
 
 import sys, os, logging, shutil
 from OpenSSL import crypto
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.backends import default_backend
+from cryptography import x509 as cx509
+from cryptography.x509.oid import NameOID
 from cicd.openssl import gen_ca, gen_csr, sign_csr, sign_server_csr, getSANValue
 import uuid
 
@@ -144,27 +149,32 @@ class ClientCertificate:
 
             return cert_bytes.decode('utf-8'), ca_bytes.decode('utf-8')
 
-        pkey = crypto.PKey()
-        pkey.generate_key(crypto.TYPE_RSA, 2048)
+        import datetime
+        pkey_crypto = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+            backend=default_backend(),
+        )
+        pkey_bytes = pkey_crypto.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
+        )
 
-        pkey_bytes = crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey)
-
-        req = crypto.X509Req()
-        subject = req.get_subject()
-        subject.commonName = os.uname()[1]
-        req.set_pubkey(pkey)
-        req.sign(pkey, 'md5')
-
-        cert = crypto.X509()
-        cert.set_serial_number(1)
-        cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(60*60*24*365) # 1 year
-        cert.set_issuer(req.get_subject())
-        cert.set_subject(req.get_subject())
-        cert.set_pubkey(req.get_pubkey())
-        cert.sign(pkey, "md5")
-
-        cert_bytes = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+        common_name = os.uname()[1]
+        name = cx509.Name([cx509.NameAttribute(NameOID.COMMON_NAME, common_name)])
+        now = datetime.datetime.now(datetime.timezone.utc)
+        cert_crypto = (
+            cx509.CertificateBuilder()
+            .subject_name(name)
+            .issuer_name(name)
+            .public_key(pkey_crypto.public_key())
+            .serial_number(1)
+            .not_valid_before(now)
+            .not_valid_after(now + datetime.timedelta(days=365))
+            .sign(pkey_crypto, hashes.SHA256(), backend=default_backend())
+        )
+        cert_bytes = cert_crypto.public_bytes(serialization.Encoding.PEM)
 
         if os.path.exists('./' + client_crt_key):
             logging.fatal('exiting since a client certificate file, ./' + client_crt_key + ', already exists')
