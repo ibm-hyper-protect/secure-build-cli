@@ -10,6 +10,7 @@
 #
 
 import sys, os, logging, shutil
+import datetime
 from OpenSSL import crypto
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import hashes, serialization
@@ -149,7 +150,6 @@ class ClientCertificate:
 
             return cert_bytes.decode('utf-8'), ca_bytes.decode('utf-8')
 
-        import datetime
         pkey_crypto = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,

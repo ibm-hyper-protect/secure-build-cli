@@ -8,7 +8,6 @@
 # US Government Users Restricted Rights - Use, duplication or
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp
 #
-import random
 import ipaddress
 import datetime
 from OpenSSL import crypto
@@ -86,7 +85,8 @@ def _parse_san_entry(entry):
 
 # Used to extract san value from a certificate
 def getSANValue(cert_path):
-    cert_crypto = cx509.load_pem_x509_certificate(open(cert_path, 'rb').read(), backend=default_backend())
+    with open(cert_path, 'rb') as f:
+        cert_crypto = cx509.load_pem_x509_certificate(f.read(), backend=default_backend())
     try:
         san_ext = cert_crypto.extensions.get_extension_for_class(cx509.SubjectAlternativeName)
         # Reproduce the OpenSSL text representation, e.g. "DNS:hostname, IP Address:1.2.3.4"
@@ -125,7 +125,7 @@ def gen_ca(ca_subject, ca_path, ca_key_path):
         f.write(ca_key_bytes.decode('utf-8'))
 
     name = _build_name(ca_subject)
-    serial = random.randint(50000000, 100000000)
+    serial = cx509.random_serial_number()
     now = datetime.datetime.now(datetime.timezone.utc)
 
     ca_cert_crypto = (
@@ -191,11 +191,14 @@ def gen_csr(cert_subject, csr_path, cert_key_path):
     return csr_crypto, cert_key
 
 def sign_csr(cert_path, csr_path, ca_path, ca_key_path):
-    csr_crypto = cx509.load_pem_x509_csr(open(csr_path, 'rb').read(), backend=default_backend())
-    ca_cert_crypto = cx509.load_pem_x509_certificate(open(ca_path, 'rb').read(), backend=default_backend())
-    ca_key_crypto = serialization.load_pem_private_key(open(ca_key_path, 'rb').read(), password=None, backend=default_backend())
+    with open(csr_path, 'rb') as f:
+        csr_crypto = cx509.load_pem_x509_csr(f.read(), backend=default_backend())
+    with open(ca_path, 'rb') as f:
+        ca_cert_crypto = cx509.load_pem_x509_certificate(f.read(), backend=default_backend())
+    with open(ca_key_path, 'rb') as f:
+        ca_key_crypto = serialization.load_pem_private_key(f.read(), password=None, backend=default_backend())
 
-    serial = random.randint(50000000, 100000000)
+    serial = cx509.random_serial_number()
     now = datetime.datetime.now(datetime.timezone.utc)
 
     builder = (
@@ -233,11 +236,14 @@ def sign_csr(cert_path, csr_path, ca_path, ca_key_path):
     return crypto.X509.from_cryptography(cert_crypto)
 
 def sign_server_csr(cert_path, csr_path, ca_path, ca_key_path, san=[]):
-    csr_crypto = cx509.load_pem_x509_csr(open(csr_path, 'rb').read(), backend=default_backend())
-    ca_cert_crypto = cx509.load_pem_x509_certificate(open(ca_path, 'rb').read(), backend=default_backend())
-    ca_key_crypto = serialization.load_pem_private_key(open(ca_key_path, 'rb').read(), password=None, backend=default_backend())
+    with open(csr_path, 'rb') as f:
+        csr_crypto = cx509.load_pem_x509_csr(f.read(), backend=default_backend())
+    with open(ca_path, 'rb') as f:
+        ca_cert_crypto = cx509.load_pem_x509_certificate(f.read(), backend=default_backend())
+    with open(ca_key_path, 'rb') as f:
+        ca_key_crypto = serialization.load_pem_private_key(f.read(), password=None, backend=default_backend())
 
-    serial = random.randint(50000000, 100000000)
+    serial = cx509.random_serial_number()
     now = datetime.datetime.now(datetime.timezone.utc)
 
     san_names = [_parse_san_entry(entry) for entry in san if entry.strip()]
